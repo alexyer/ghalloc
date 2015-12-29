@@ -22,7 +22,7 @@ func (opt *Options) Init() {
 	}
 
 	if opt.MinChunkSize == 0 {
-		opt.MinChunkSize = 50 * B
+		opt.MinChunkSize = 56 * B
 	}
 
 	if opt.GrowthFactor == 0 {

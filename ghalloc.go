@@ -1,7 +1,10 @@
 // Implementation of Memcached inspired Slab Allocator.
 package ghalloc
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Ghalloc struct {
 	Opt         *Options
@@ -43,4 +46,12 @@ func (g *Ghalloc) InitSlabsClasses() {
 	}
 
 	g.slabClasses = append(g.slabClasses, newSlabClass(g.Opt.SlabSize, g.Opt.SlabSize))
+}
+
+// Print information about slab classes.
+// Debug function.
+func (g *Ghalloc) PrintSlabClassesInfo() {
+	for _, sc := range g.slabClasses {
+		fmt.Printf("Chunk size: %9d, Chunks num: %9d\n", sc.ChunkSize, sc.SlabSize/sc.ChunkSize)
+	}
 }
