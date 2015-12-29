@@ -3,7 +3,8 @@ package ghalloc
 import "testing"
 
 func TestNewSlab(t *testing.T) {
-	slab := newSlab(42)
+	sc := newSlabClass(42, 1*MB)
+	slab := newSlab(sc)
 
 	if len(slab.memory) != 42 {
 		t.Fatalf("slab: allocated wrong memory slice")

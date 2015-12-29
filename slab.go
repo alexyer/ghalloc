@@ -7,24 +7,29 @@ type slabClass struct {
 }
 
 type slab struct {
-	memory []byte // Allocated memory of the given slab.
+	slabClass *slabClass // Slab class of the current slab.
+	memory    []byte     // Allocated memory of the given slab.
 }
 
 func newSlabClass(chunkSize, slabSize int) *slabClass {
-	return &slabClass{
+	sc := &slabClass{
 		ChunkSize: chunkSize,
 		SlabSize:  slabSize,
-		slabs:     []*slab{newSlab(slabSize)},
 	}
+
+	sc.slabs = []*slab{newSlab(sc)}
+
+	return sc
 }
 
-func newSlab(size int) *slab {
+func newSlab(sc *slabClass) *slab {
 	return &slab{
-		memory: make([]byte, size),
+		slabClass: sc,
+		memory:    make([]byte, sc.SlabSize),
 	}
 }
 
 // Allocate new slab.
 func (s *slabClass) grow() {
-	s.slabs = append(s.slabs, newSlab(s.SlabSize))
+	s.slabs = append(s.slabs, newSlab(s))
 }
