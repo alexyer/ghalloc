@@ -4,6 +4,7 @@ package ghalloc
 import (
 	"errors"
 	"fmt"
+	"unsafe"
 )
 
 type Ghalloc struct {
@@ -54,4 +55,24 @@ func (g *Ghalloc) PrintSlabClassesInfo() {
 	for _, sc := range g.slabClasses {
 		fmt.Printf("Chunk size: %9d, Chunks num: %9d\n", sc.ChunkSize, sc.SlabSize/sc.ChunkSize)
 	}
+}
+
+// Allocate region of the given size.
+func (g *Ghalloc) Alloc(size uintptr) (unsafe.Pointer, error) {
+	if int(size) > g.Opt.SlabSize {
+		return nil, errors.New("ghalloc: too big region to allocate")
+	}
+
+	sc := g.findSlabClass(int(size))
+	return sc.getChunk()
+}
+
+// Find suitable slab class for the given size.
+func (g *Ghalloc) findSlabClass(size int) *slabClass {
+	for i := 0; i < len(g.slabClasses); i++ {
+		if size < g.slabClasses[i].ChunkSize {
+			return g.slabClasses[i]
+		}
+	}
+	return nil
 }

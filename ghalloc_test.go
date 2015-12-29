@@ -42,3 +42,15 @@ func TestInitSlabClasses(t *testing.T) {
 		t.Fatalf("slab classes: wrong classes")
 	}
 }
+
+func TestFindSlabClass(t *testing.T) {
+	ghalloc, _ := New(&Options{
+		SlabSize:     1 * MB,
+		MinChunkSize: 512 * KB,
+		GrowthFactor: 2,
+	})
+
+	if ghalloc.findSlabClass(128).ChunkSize != 512*KB || ghalloc.findSlabClass(700*KB).ChunkSize != 1*MB {
+		t.Fatalf("find slab class: wrong classes")
+	}
+}

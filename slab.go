@@ -1,5 +1,7 @@
 package ghalloc
 
+import "unsafe"
+
 type slabClass struct {
 	ChunkSize int // Chunk size of the given class.
 	SlabSize  int
@@ -32,4 +34,9 @@ func newSlab(sc *slabClass) *slab {
 // Allocate new slab.
 func (s *slabClass) grow() {
 	s.slabs = append(s.slabs, newSlab(s))
+}
+
+// Get pointer to a free chunk in the given slab class.
+func (s *slabClass) getChunk() (unsafe.Pointer, error) {
+	return nil, nil
 }
