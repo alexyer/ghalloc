@@ -37,10 +37,10 @@ func (g *Ghalloc) InitSlabsClasses() {
 			size += CHUNK_ALIGN_BYTES - (size % CHUNK_ALIGN_BYTES)
 		}
 
-		g.slabClasses = append(g.slabClasses, NewSlabClass(size))
+		g.slabClasses = append(g.slabClasses, NewSlabClass(size, g.Opt.SlabSize))
 
 		size = int(float64(size) * g.Opt.GrowthFactor)
 	}
 
-	g.slabClasses = append(g.slabClasses, NewSlabClass(g.Opt.SlabSize))
+	g.slabClasses = append(g.slabClasses, NewSlabClass(g.Opt.SlabSize, g.Opt.SlabSize))
 }
