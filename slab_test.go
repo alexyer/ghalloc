@@ -3,7 +3,7 @@ package ghalloc
 import "testing"
 
 func TestNewSlab(t *testing.T) {
-	sc := newSlabClass(42, 1*MB)
+	sc := newSlabClass(42, 42)
 	slab := newSlab(sc)
 
 	if len(slab.memory) != 42 {
