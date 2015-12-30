@@ -53,7 +53,7 @@ func (g *Ghalloc) InitSlabsClasses() {
 // Debug function.
 func (g *Ghalloc) PrintSlabClassesInfo() {
 	for _, sc := range g.slabClasses {
-		fmt.Printf("Chunk size: %9d, Chunks num: %9d\n", sc.ChunkSize, sc.SlabSize/sc.ChunkSize)
+		fmt.Printf("Chunk size: %9d, Capacity: %9d\n", sc.ChunkSize, sc.SlabSize/sc.ChunkSize)
 	}
 }
 
