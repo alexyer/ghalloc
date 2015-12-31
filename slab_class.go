@@ -32,3 +32,13 @@ func (s *slabClass) grow() *slab {
 func (s *slabClass) getChunk() (unsafe.Pointer, error) {
 	return nil, nil
 }
+
+// Find non full slab.
+func (s *slabClass) findAvailableSlab() *slab {
+	for i := 0; i < len(s.slabs); i++ {
+		if !s.slabs[i].full {
+			return s.slabs[i]
+		}
+	}
+	return nil
+}
