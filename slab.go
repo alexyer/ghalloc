@@ -51,3 +51,55 @@ func (s *slab) allocChunk() unsafe.Pointer {
 
 	return ptr
 }
+
+// Free allocated pointer.
+func (s *slab) freeChunk(ptr unsafe.Pointer) {
+	i := s.findChunk(ptr)
+
+	switch {
+	// Free the last allocated chunk.
+	// Just move border to the left.
+	case uint64(i) == s.allocated-1:
+		s.slabMu.Lock()
+
+		s.allocated--
+
+		if s.full {
+			s.full = false
+		}
+
+		s.slabMu.Unlock()
+		return
+
+	// Free chunk from the allocated range.
+	// Copy the last allocated chunk to free chunk place
+	// and move border to the left.
+	case i >= 0:
+		s.slabMu.Lock()
+
+		s.allocated--
+		s.chunks[i] = s.chunks[s.allocated]
+
+		if s.full {
+			s.full = false
+		}
+
+		s.slabMu.Unlock()
+		return
+
+	// Does not belong to the current chunk
+	default:
+		return
+	}
+}
+
+// Find ptr index in the array of chunk.
+// Return index or -1 if chunk is not found.
+func (s *slab) findChunk(ptr unsafe.Pointer) int {
+	for i := 0; i < len(s.chunks); i++ {
+		if ptr == s.chunks[i] {
+			return i
+		}
+	}
+	return -1
+}

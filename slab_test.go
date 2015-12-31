@@ -52,6 +52,45 @@ func TestAllocChunk(t *testing.T) {
 		t.Fatal("slab alloc: Expected nil, got pointer")
 	}
 }
+func TestFindChunk(t *testing.T) {
+	sc := newSlabClass(512*KB, 1*MB)
+	slab := newSlab(sc)
+
+	ptr := slab.allocChunk()
+	invalidPtr := unsafe.Pointer(&sc)
+
+	if slab.findChunk(ptr) < 0 {
+		t.Fatal("slab find chunk: chunk is not found")
+	}
+
+	if slab.findChunk(invalidPtr) >= 0 {
+		t.Fatal("slab find chunk: wrong chunk found")
+	}
+}
+
+func TestFreeChunk(t *testing.T) {
+	var (
+		sc   *slabClass = newSlabClass(512*KB, 1*MB)
+		slab *slab      = newSlab(sc)
+		ptr  unsafe.Pointer
+	)
+
+	for !slab.full {
+		ptr = slab.allocChunk()
+	}
+
+	slab.freeChunk(slab.chunks[0])
+
+	if slab.full {
+		t.Fatal("slab free chunk: chunk is not freed")
+	}
+
+	slab.freeChunk(ptr)
+
+	if slab.full {
+		t.Fatal("slab free chunk: chunk is not freed")
+	}
+}
 
 func TestAllocChunkRaces(t *testing.T) {
 	sc := newSlabClass(512*KB, 1*MB)
