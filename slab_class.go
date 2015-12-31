@@ -22,8 +22,10 @@ func newSlabClass(chunkSize, slabSize int) *slabClass {
 }
 
 // Allocate new slab.
-func (s *slabClass) grow() {
-	s.slabs = append(s.slabs, newSlab(s))
+func (s *slabClass) grow() *slab {
+	ns := newSlab(s)
+	s.slabs = append(s.slabs, ns)
+	return ns
 }
 
 // Get pointer to a free chunk in the given slab class.
