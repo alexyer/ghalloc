@@ -54,14 +54,13 @@ func (s *slab) allocChunk() unsafe.Pointer {
 
 // Free allocated pointer.
 func (s *slab) freeChunk(ptr unsafe.Pointer) {
+	s.slabMu.Lock()
 	i := s.findChunk(ptr)
 
 	switch {
 	// Free the last allocated chunk.
 	// Just move border to the left.
 	case uint64(i) == s.allocated-1:
-		s.slabMu.Lock()
-
 		s.allocated--
 
 		if s.full {
@@ -75,8 +74,6 @@ func (s *slab) freeChunk(ptr unsafe.Pointer) {
 	// Copy the last allocated chunk to free chunk place
 	// and move border to the left.
 	case i >= 0:
-		s.slabMu.Lock()
-
 		s.allocated--
 		s.chunks[i] = s.chunks[s.allocated]
 
@@ -89,6 +86,7 @@ func (s *slab) freeChunk(ptr unsafe.Pointer) {
 
 	// Does not belong to the current chunk
 	default:
+		s.slabMu.Unlock()
 		return
 	}
 }
