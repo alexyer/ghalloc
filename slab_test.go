@@ -70,13 +70,20 @@ func TestFindChunk(t *testing.T) {
 
 func TestFreeChunk(t *testing.T) {
 	var (
-		sc   *slabClass = newSlabClass(512*KB, 1*MB)
-		slab *slab      = newSlab(sc)
-		ptr  unsafe.Pointer
+		sc         *slabClass = newSlabClass(512*KB, 1*MB)
+		slab       *slab      = newSlab(sc)
+		ptr        unsafe.Pointer
+		invalidPtr unsafe.Pointer = unsafe.Pointer(&sc)
 	)
 
 	for !slab.full {
 		ptr = slab.allocChunk()
+	}
+
+	slab.freeChunk(invalidPtr)
+
+	if !slab.full {
+		t.Fatal("slab free chunk: freed wrong chunk")
 	}
 
 	slab.freeChunk(slab.chunks[0])
