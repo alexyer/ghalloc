@@ -3,15 +3,15 @@ package ghalloc
 import "unsafe"
 
 type slabClass struct {
-	Capacity  int // Number of chunks of the given class.
-	ChunkSize int // Chunk size of the given class.
+	Capacity  uint64 // Number of chunks of the given class.
+	ChunkSize int    // Chunk size of the given class.
 	SlabSize  int
 	slabs     []*slab // Array of slabs of the given class.
 }
 
 func newSlabClass(chunkSize, slabSize int) *slabClass {
 	sc := &slabClass{
-		Capacity:  slabSize / chunkSize,
+		Capacity:  uint64(slabSize / chunkSize),
 		ChunkSize: chunkSize,
 		SlabSize:  slabSize,
 	}

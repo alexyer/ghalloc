@@ -24,9 +24,30 @@ func newSlab(sc *slabClass) *slab {
 	}
 
 	// Create array of chunks. Each chunk is a pointer to the memory region of the slab.
-	for i := 0; i < sc.Capacity; i++ {
+	var i uint64
+	for i = 0; i < sc.Capacity; i++ {
 		s.chunks[i] = unsafe.Pointer(uintptr(unsafe.Pointer(&s.memory[0])) + unsafe.Sizeof(s.memory[0])*uintptr(i))
 	}
 
 	return s
+}
+
+// Allocate new pointer in the chunk.
+func (s *slab) allocChunk() unsafe.Pointer {
+	if s.full {
+		return nil
+	}
+
+	s.slabMu.Lock()
+
+	ptr := s.chunks[s.allocated]
+	s.allocated++
+
+	if s.allocated >= s.slabClass.Capacity {
+		s.full = true
+	}
+
+	s.slabMu.Unlock()
+
+	return ptr
 }
