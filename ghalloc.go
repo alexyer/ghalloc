@@ -77,6 +77,19 @@ func (g *Ghalloc) Alloc(size uintptr) unsafe.Pointer {
 	return ptr
 }
 
+// Free previously allocated region.
+func (g *Ghalloc) Free(ptr unsafe.Pointer, size uintptr) {
+	if int(size) > g.Opt.SlabSize {
+		return
+	}
+
+	i := g.findSlabClassIndex(int(size))
+
+	g.slabClassesLocks[i].Lock()
+	g.slabClasses[i].returnChunk(ptr)
+	g.slabClassesLocks[i].Unlock()
+}
+
 // Find suitable slab class for the given size.
 func (g *Ghalloc) findSlabClassIndex(size int) int {
 	for i := 0; i < len(g.slabClasses); i++ {

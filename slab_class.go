@@ -39,6 +39,16 @@ func (s *slabClass) getChunk() unsafe.Pointer {
 	return slab.allocChunk()
 }
 
+// Return pointer to a free chunk list.
+func (s *slabClass) returnChunk(ptr unsafe.Pointer) {
+	uptr := uintptr(ptr)
+	for i := 0; i < len(s.slabs); i++ {
+		if uptr <= uintptr(unsafe.Pointer(&s.slabs[i].memory[0]))+uintptr(s.SlabSize) {
+			s.slabs[i].freeChunk(ptr)
+		}
+	}
+}
+
 // Find non full slab.
 func (s *slabClass) findAvailableSlab() *slab {
 	for i := 0; i < len(s.slabs); i++ {

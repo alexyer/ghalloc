@@ -1,6 +1,9 @@
 package ghalloc
 
-import "testing"
+import (
+	"testing"
+	"unsafe"
+)
 
 func TestNew(t *testing.T) {
 	opt := Options{
@@ -74,6 +77,21 @@ func TestAlloc(t *testing.T) {
 	}
 }
 
+func TestFree(t *testing.T) {
+	ghalloc, _ := New(&Options{
+		SlabSize:     1 * MB,
+		MinChunkSize: 512 * KB,
+		GrowthFactor: 2,
+	})
+
+	ptr := ghalloc.Alloc(uintptr(42))
+	ghalloc.Free(ptr, 42)
+
+	if ghalloc.slabClasses[0].slabs[0].allocated != 0 {
+		t.Fatalf("ghalloc: free: error. Allocated: %d", ghalloc.slabClasses[0].slabs[0].allocated)
+	}
+}
+
 func TestAllocRaces(t *testing.T) {
 	ghalloc, _ := New(&Options{
 		SlabSize:     1 * MB,
@@ -83,5 +101,23 @@ func TestAllocRaces(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		go ghalloc.Alloc(uintptr(42))
+	}
+}
+
+func TestFreeRaces(t *testing.T) {
+	ghalloc, _ := New(&Options{
+		SlabSize:     1 * MB,
+		MinChunkSize: 512 * KB,
+		GrowthFactor: 2,
+	})
+
+	var ptrs [10]unsafe.Pointer
+
+	for i := range ptrs {
+		ptrs[i] = ghalloc.Alloc(42)
+	}
+
+	for _, ptr := range ptrs {
+		go ghalloc.Free(ptr, uintptr(42))
 	}
 }
