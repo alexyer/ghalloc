@@ -49,6 +49,9 @@ func (s *slab) freeChunk(ptr unsafe.Pointer) {
 		s.chunkMap &^= 1 << uint64(uptr-begin) % uint64(s.slabClass.SlabSize)
 
 		s.allocated--
+		if s.full {
+			s.full = false
+		}
 	}
 }
 
