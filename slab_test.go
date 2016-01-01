@@ -98,22 +98,3 @@ func TestFreeChunk(t *testing.T) {
 		t.Fatal("slab free chunk: chunk is not freed")
 	}
 }
-
-func TestAllocChunkRaces(t *testing.T) {
-	sc := newSlabClass(512*KB, 1*MB)
-	slab := newSlab(sc)
-
-	go slab.allocChunk()
-	go slab.allocChunk()
-}
-
-func TestFreeChunkRaces(t *testing.T) {
-	sc := newSlabClass(512*KB, 1*MB)
-	slab := newSlab(sc)
-
-	ptr1 := slab.allocChunk()
-	ptr2 := slab.allocChunk()
-
-	go slab.freeChunk(ptr1)
-	go slab.freeChunk(ptr2)
-}

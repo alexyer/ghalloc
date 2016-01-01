@@ -50,7 +50,38 @@ func TestFindSlabClass(t *testing.T) {
 		GrowthFactor: 2,
 	})
 
-	if ghalloc.findSlabClass(128).ChunkSize != 512*KB || ghalloc.findSlabClass(700*KB).ChunkSize != 1*MB {
+	sc1 := ghalloc.findSlabClassIndex(128)
+	sc2 := ghalloc.findSlabClassIndex(700 * KB)
+
+	if ghalloc.slabClasses[sc1].ChunkSize != 512*KB || ghalloc.slabClasses[sc2].ChunkSize != 1*MB {
 		t.Fatalf("find slab class: wrong classes")
+	}
+}
+
+func TestAlloc(t *testing.T) {
+	ghalloc, _ := New(&Options{
+		SlabSize:     1 * MB,
+		MinChunkSize: 512 * KB,
+		GrowthFactor: 2,
+	})
+
+	if ptr := ghalloc.Alloc(uintptr(700 * KB)); ptr == nil {
+		t.Fatal("ghalloc: expected pointer. Got nil")
+	}
+
+	if bigPtr := ghalloc.Alloc(uintptr(2 * MB)); bigPtr != nil {
+		t.Fatal("ghalloc: allocated too big chunk. Expected nil")
+	}
+}
+
+func TestAllocRaces(t *testing.T) {
+	ghalloc, _ := New(&Options{
+		SlabSize:     1 * MB,
+		MinChunkSize: 512 * KB,
+		GrowthFactor: 2,
+	})
+
+	for i := 0; i < 10; i++ {
+		go ghalloc.Alloc(uintptr(42))
 	}
 }

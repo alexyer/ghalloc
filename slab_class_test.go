@@ -1,6 +1,9 @@
 package ghalloc
 
-import "testing"
+import (
+	"testing"
+	"unsafe"
+)
 
 func TestGrow(t *testing.T) {
 	sc := newSlabClass(80, 1*MB)
@@ -31,5 +34,25 @@ func TestFindAvailableSlab(t *testing.T) {
 
 	if slab != nil {
 		t.Fatal("slab class: find slab: found wrong slab. Expected nil")
+	}
+}
+
+func TestGetChunk(t *testing.T) {
+	sc := newSlabClass(512*KB, 1*MB)
+
+	var ptrs [3]unsafe.Pointer
+
+	for i := range ptrs {
+		ptrs[i] = sc.getChunk()
+	}
+
+	for i := range ptrs {
+		if ptrs[i] == nil {
+			t.Fatal("slab class: get chunk: nil pointer")
+		}
+	}
+
+	if len(sc.slabs) != 2 {
+		t.Fatal("slab class: get chunk: hasn't grown")
 	}
 }

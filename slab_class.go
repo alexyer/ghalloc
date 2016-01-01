@@ -29,8 +29,14 @@ func (s *slabClass) grow() *slab {
 }
 
 // Get pointer to a free chunk in the given slab class.
-func (s *slabClass) getChunk() (unsafe.Pointer, error) {
-	return nil, nil
+func (s *slabClass) getChunk() unsafe.Pointer {
+	slab := s.findAvailableSlab()
+
+	if slab == nil {
+		slab = s.grow()
+	}
+
+	return slab.allocChunk()
 }
 
 // Find non full slab.

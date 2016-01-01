@@ -4,12 +4,14 @@ package ghalloc
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"unsafe"
 )
 
 type Ghalloc struct {
-	Opt         *Options
-	slabClasses []*slabClass // Array of slabClasses. Each slabClass is an array of slabs.
+	Opt              *Options
+	slabClassesLocks []sync.Mutex
+	slabClasses      []*slabClass // Array of slabClasses. Each slabClass is an array of slabs.
 }
 
 func New(opt *Options) (*Ghalloc, error) {
@@ -47,6 +49,7 @@ func (g *Ghalloc) InitSlabsClasses() {
 	}
 
 	g.slabClasses = append(g.slabClasses, newSlabClass(g.Opt.SlabSize, g.Opt.SlabSize))
+	g.slabClassesLocks = make([]sync.Mutex, len(g.slabClasses))
 }
 
 // Print information about slab classes.
@@ -58,21 +61,28 @@ func (g *Ghalloc) PrintSlabClassesInfo() {
 }
 
 // Allocate region of the given size.
-func (g *Ghalloc) Alloc(size uintptr) (unsafe.Pointer, error) {
+func (g *Ghalloc) Alloc(size uintptr) unsafe.Pointer {
 	if int(size) > g.Opt.SlabSize {
-		return nil, errors.New("ghalloc: too big region to allocate")
+		return nil
 	}
 
-	sc := g.findSlabClass(int(size))
-	return sc.getChunk()
+	i := g.findSlabClassIndex(int(size))
+
+	// TODO(alexyer): The lock locks the whole slab class.
+	//                Think about better granular lock.
+	g.slabClassesLocks[i].Lock()
+	ptr := g.slabClasses[i].getChunk()
+	g.slabClassesLocks[i].Unlock()
+
+	return ptr
 }
 
 // Find suitable slab class for the given size.
-func (g *Ghalloc) findSlabClass(size int) *slabClass {
+func (g *Ghalloc) findSlabClassIndex(size int) int {
 	for i := 0; i < len(g.slabClasses); i++ {
-		if size < g.slabClasses[i].ChunkSize {
-			return g.slabClasses[i]
+		if size <= g.slabClasses[i].ChunkSize {
+			return i
 		}
 	}
-	return nil
+	return -1
 }

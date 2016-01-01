@@ -1,12 +1,8 @@
 package ghalloc
 
-import (
-	"sync"
-	"unsafe"
-)
+import "unsafe"
 
 type slab struct {
-	slabMu    sync.Mutex
 	slabClass *slabClass       // Slab class of the slab.
 	memory    []byte           // Allocated memory of the slab.
 	full      bool             // Indicates if slab has free chunks to allocate.
@@ -38,8 +34,6 @@ func (s *slab) allocChunk() unsafe.Pointer {
 		return nil
 	}
 
-	s.slabMu.Lock()
-
 	ptr := s.chunks[s.allocated]
 	s.allocated++
 
@@ -47,14 +41,11 @@ func (s *slab) allocChunk() unsafe.Pointer {
 		s.full = true
 	}
 
-	s.slabMu.Unlock()
-
 	return ptr
 }
 
 // Free allocated pointer.
 func (s *slab) freeChunk(ptr unsafe.Pointer) {
-	s.slabMu.Lock()
 	i := s.findChunk(ptr)
 
 	switch {
@@ -67,7 +58,6 @@ func (s *slab) freeChunk(ptr unsafe.Pointer) {
 			s.full = false
 		}
 
-		s.slabMu.Unlock()
 		return
 
 	// Free chunk from the allocated range.
@@ -81,12 +71,10 @@ func (s *slab) freeChunk(ptr unsafe.Pointer) {
 			s.full = false
 		}
 
-		s.slabMu.Unlock()
 		return
 
 	// Does not belong to the current chunk
 	default:
-		s.slabMu.Unlock()
 		return
 	}
 }
