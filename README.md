@@ -14,7 +14,7 @@ type SomeStructure {
 }
 
 allocator := ghalloc.New(&ghalloc.Options{})
-newStruct := ghalloc.Alloc(unsafe.Sizeof(SomeStructure{}))
+newStruct := (*SomeStructure)(ghalloc.Alloc(unsafe.Sizeof(SomeStructure{})))
 newStruct.Field1 = 1
 ghalloc.Free(&newStruct, unsafe.Sizeof(newStruct))
 ```
