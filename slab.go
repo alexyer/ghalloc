@@ -3,11 +3,11 @@ package ghalloc
 import "unsafe"
 
 type slab struct {
-	slabClass *slabClass       // Slab class of the slab.
-	memory    []byte           // Allocated memory of the slab.
-	full      bool             // Indicates if slab has free chunks to allocate.
-	allocated uint64           // Number of allocated chunks. Also pointer to the first free chunk in the slab.
-	chunks    []unsafe.Pointer // Array of pointers to the chunks of the slab.
+	slabClass *slabClass // Slab class of the slab.
+	memory    []byte     // Allocated memory of the slab.
+	full      bool       // Indicates if slab has free chunks to allocate.
+	allocated uint64     // Number of allocated chunks. Also pointer to the first free chunk in the slab.
+	chunkMap  uint64     // Bitmap of allocated chunks.
 }
 
 func newSlab(sc *slabClass) *slab {
@@ -16,13 +16,6 @@ func newSlab(sc *slabClass) *slab {
 		memory:    make([]byte, sc.SlabSize),
 		full:      false,
 		allocated: 0,
-		chunks:    make([]unsafe.Pointer, sc.Capacity, sc.Capacity),
-	}
-
-	// Create array of chunks. Each chunk is a pointer to the memory region of the slab.
-	var i uint64
-	for i = 0; i < sc.Capacity; i++ {
-		s.chunks[i] = unsafe.Pointer(uintptr(unsafe.Pointer(&s.memory[0])) + unsafe.Sizeof(s.memory[0])*uintptr(i))
 	}
 
 	return s
@@ -34,7 +27,10 @@ func (s *slab) allocChunk() unsafe.Pointer {
 		return nil
 	}
 
-	ptr := s.chunks[s.allocated]
+	i := s.getUnusedChunkIndex()
+	ptr := unsafe.Pointer(&s.memory[s.getUnusedChunkIndex()])
+
+	s.chunkMap |= 1 << i
 	s.allocated++
 
 	if s.allocated >= s.slabClass.Capacity {
@@ -46,46 +42,25 @@ func (s *slab) allocChunk() unsafe.Pointer {
 
 // Free allocated pointer.
 func (s *slab) freeChunk(ptr unsafe.Pointer) {
-	i := s.findChunk(ptr)
+	uptr := uintptr(ptr)
+	begin := uintptr(unsafe.Pointer(&s.memory[0]))
 
-	switch {
-	// Free the last allocated chunk.
-	// Just move border to the left.
-	case uint64(i) == s.allocated-1:
+	if uptr >= begin && uptr <= uintptr(unsafe.Pointer(&s.memory[0]))+uintptr(s.slabClass.SlabSize) {
+		s.chunkMap &^= 1 << uint64(uptr-begin) % uint64(s.slabClass.SlabSize)
+
 		s.allocated--
-
-		if s.full {
-			s.full = false
-		}
-
-		return
-
-	// Free chunk from the allocated range.
-	// Copy the last allocated chunk to free chunk place
-	// and move border to the left.
-	case i >= 0:
-		s.allocated--
-		s.chunks[i] = s.chunks[s.allocated]
-
-		if s.full {
-			s.full = false
-		}
-
-		return
-
-	// Does not belong to the current chunk
-	default:
-		return
 	}
 }
 
-// Find ptr index in the array of chunk.
-// Return index or -1 if chunk is not found.
-func (s *slab) findChunk(ptr unsafe.Pointer) int {
-	for i := 0; i < len(s.chunks); i++ {
-		if ptr == s.chunks[i] {
+func (s *slab) getUnusedChunkIndex() uint64 {
+	var i uint64
+
+	for i = 0; i < s.slabClass.Capacity; i++ {
+		if s.chunkMap&(1<<i) == 0 {
 			return i
 		}
 	}
-	return -1
+	// Just for complier.
+	// Used if slab is not full, hence there are always free chunks.
+	return i
 }
