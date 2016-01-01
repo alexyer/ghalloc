@@ -15,27 +15,27 @@ func TestGrow(t *testing.T) {
 	}
 }
 
-func TestFindAvailableSlab(t *testing.T) {
-	sc := newSlabClass(512*KB, 1*MB)
-	sc.grow()
-	sc.slabs[0].full = true
+//func TestFindAvailableSlab(t *testing.T) {
+//sc := newSlabClass(512*KB, 1*MB)
+//sc.grow()
+//sc.slabs[0].full = true
 
-	slab := sc.findAvailableSlab()
+//slab := sc.findAvailableSlab()
 
-	if slab != sc.slabs[1] {
-		t.Fatal("slab class: find slab: found wrong slab")
-	}
+//if slab != sc.slabs[1] {
+//t.Fatal("slab class: find slab: found wrong slab")
+//}
 
-	for _, slab := range sc.slabs {
-		slab.full = true
-	}
+//for _, slab := range sc.slabs {
+//slab.full = true
+//}
 
-	slab = sc.findAvailableSlab()
+//slab = sc.findAvailableSlab()
 
-	if slab != nil {
-		t.Fatal("slab class: find slab: found wrong slab. Expected nil")
-	}
-}
+//if slab != nil {
+//t.Fatal("slab class: find slab: found wrong slab. Expected nil")
+//}
+//}
 
 func TestGetChunk(t *testing.T) {
 	sc := newSlabClass(512*KB, 1*MB)
