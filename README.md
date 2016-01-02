@@ -9,7 +9,7 @@ Heavily uses unsafe package and pointer arithmetic, so use on your own risk.
 
 ## Example
 ```go
-type SomeStructure {
+type SomeStructure struct {
     Field1 int
 }
 
